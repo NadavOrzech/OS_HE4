@@ -118,7 +118,7 @@ void* calloc(size_t num, size_t size){
 void* realloc(void* oldp, size_t size){
     if(size == 0 || size > MAX_SIZE)
         return NULL;
-    
+
     meta_data* old_meta_data=find_meta_data_by_user_ptr(oldp);
     if(old_meta_data==NULL)                             //oldp is NULL or there is no meta_data that holds oldp
         return malloc(size);
