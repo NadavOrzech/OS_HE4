@@ -21,7 +21,7 @@ meta_data* last_data = NULL;
  */
 meta_data* find_first_fitting_place(size_t size){
     meta_data* current=first_data;
-    while(!current){
+    while(current){
         if(!current->is_free) {                         //if the current block is occupied - continue
             current=current->next_ptr;
             continue;
@@ -39,7 +39,7 @@ meta_data* find_meta_data_by_user_ptr(void* user_ptr){
         return NULL;
 
     meta_data* current=first_data;
-    while(!current){
+    while(current){
         if(current->start_of_alloc==user_ptr)
             return current;
 
@@ -49,7 +49,7 @@ meta_data* find_meta_data_by_user_ptr(void* user_ptr){
 }
 
 meta_data* create_new_meta_data(size_t size){
-    meta_data* data_to_add=sbrk(sizeof(meta_data));
+    meta_data* data_to_add=(meta_data*)sbrk(sizeof(meta_data));
     if(data_to_add==(void*)(-1))
         return NULL;
 
@@ -116,6 +116,9 @@ void* calloc(size_t num, size_t size){
 }
 
 void* realloc(void* oldp, size_t size){
+    if(size == 0 || size > MAX_SIZE)
+        return NULL;
+    
     meta_data* old_meta_data=find_meta_data_by_user_ptr(oldp);
     if(old_meta_data==NULL)                             //oldp is NULL or there is no meta_data that holds oldp
         return malloc(size);
@@ -125,16 +128,16 @@ void* realloc(void* oldp, size_t size){
         return old_meta_data->start_of_alloc;
     }
 
-    meta_data* new_meta_data=malloc(size);
-    if(new_meta_data==NULL)                             //if allocation failed we dont free oldp
+    void* new_start_of_alloc=malloc(size);
+    if(new_start_of_alloc==NULL)                             //if allocation failed we dont free oldp
         return NULL;
 
-    void* tmp_ptr=std::memcpy(new_meta_data->start_of_alloc, old_meta_data->start_of_alloc, size);
+    void* tmp_ptr=std::memcpy(new_start_of_alloc, old_meta_data->start_of_alloc, size);
     if(tmp_ptr==NULL)
         return NULL;
 
     old_meta_data->is_free=true;                        //here we free the old space
-    return new_meta_data->start_of_alloc;
+    return new_start_of_alloc;
 }
 
 //--------------------------------------------------------------------------------------------------------//
@@ -145,7 +148,7 @@ size_t _num_free_blocks(){
     meta_data* current=first_data;
     size_t num_free_blocks=0;
 
-    while(!current){
+    while(current){
         if(current->is_free)
             num_free_blocks++;
         current=current->next_ptr;
@@ -158,11 +161,9 @@ size_t _num_free_bytes(){
     meta_data* current=first_data;
     size_t num_free_bytes=0;
 
-    while(!current){
+    while(current){
         if(current->is_free)
             num_free_bytes+=current->block_size;
-        else
-            num_free_bytes+=(current->block_size - current->current_size);
 
         current=current->next_ptr;
     }
@@ -174,7 +175,7 @@ size_t _num_allocated_blocks(){
     meta_data* current=first_data;
     size_t num_blocks=0;
 
-    while(!current){
+    while(current){
         num_blocks++;
         current=current->next_ptr;
     }
@@ -186,7 +187,7 @@ size_t _num_allocated_bytes(){
     meta_data* current=first_data;
     size_t num_allocated_bytes=0;
 
-    while(!current){
+    while(current){
         num_allocated_bytes+=current->block_size;
         current=current->next_ptr;
     }
@@ -195,7 +196,7 @@ size_t _num_allocated_bytes(){
 }
 
 size_t _num_meta_data_bytes(){
-    return (_num_allocated_blocks() * sizeof(meta_data))
+    return (_num_allocated_blocks() * sizeof(meta_data));
 }
 
 size_t _size_meta_data(){

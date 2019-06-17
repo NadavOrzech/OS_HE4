@@ -7,7 +7,7 @@
 /** Run the test 4 times, and each time change the _TEST_NUMBER definition.
  * _TEST_NUMBER should be: 1 or 2 or 3 or 4.
  */
-#define _TEST_NUMBER 0
+#define _TEST_NUMBER 1
 
 
 #if (1 == _TEST_NUMBER)
@@ -21,9 +21,11 @@ void malloc2_test_01() {
     // malloc
     int *ten = (int *) malloc(sizeof(int) * 10);
     assert(ten);
+
     for (int i = 0; i < 10; i++) {
         ten[i] = 10;
     }
+
     int *five = (int *) malloc(sizeof(int) * 5);
     assert(five);
     for (int i = 0; i < 5; i++) {
@@ -36,8 +38,8 @@ void malloc2_test_01() {
     for (int i = 0; i < 5; i++) {
         assert(five[i] == 5);
     }
-
     // calloc
+
     int *three = (int *) calloc(3, sizeof(int));
     assert(three);
     for (int i = 0; i < 3; i++) {
@@ -52,7 +54,12 @@ void malloc2_test_01() {
     assert(_num_meta_data_bytes() == _size_meta_data() * 3);
 
     // realloc
+    printf("BEFORE REALLOC\n");
+
     int *ninety = (int *) realloc(ten, sizeof(int) * 90);
+
+    printf("AFTER REALLOC\n");
+
     for (int i = 0; i < 90; i++) {
         ninety[i] = 90;
     }
@@ -85,6 +92,7 @@ void malloc2_test_01() {
 
     // order so far: ten(freed), five, three, ninety(eleven), sixty
     assert(_num_free_blocks() == 1);
+//    printf("free %d \n", _num_free_bytes()/ sizeof(int));
     assert(_num_free_bytes() == sizeof(int) * 10);
     assert(_num_allocated_blocks() == 5);
     assert(_num_allocated_bytes() == sizeof(int) * 168);
@@ -331,3 +339,4 @@ int main() {
     printf("Success for test: %d.\n", _TEST_NUMBER);
     return 0;
 }
+
