@@ -26,9 +26,8 @@ void check_and_split(meta_data* current, size_t size){
     if(current->block_size<(size+ALIGNED_META_DATA+LARGE_ENOUGH))
         return;
 
-    void* tmp=(current->start_of_alloc)+(void*)size;        //inserts new meta_data to list
-    meta_data* new_meta_data=(meta_data*)tmp;
-
+    meta_data* new_meta_data=(meta_data*)(current->start_of_alloc);             //inserts new meta_data to list
+    new_meta_data+=size;
     new_meta_data->is_free=true;
     new_meta_data->block_size=current->block_size-(size+ALIGNED_META_DATA);
     new_meta_data->current_size=new_meta_data->block_size;
