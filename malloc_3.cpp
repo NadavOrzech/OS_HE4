@@ -22,23 +22,7 @@ struct meta_data{
 meta_data* first_data = NULL;
 meta_data* last_data = NULL;
 
-void check_and_split(meta_data* current, size_t size){
-    if(current->block_size<(size+ALIGNED_META_DATA+LARGE_ENOUGH))
-        return;
 
-    meta_data* new_meta_data=(meta_data*)current->start_of_alloc;             //inserts new meta_data to list
-    (char*)new_meta_data += size;
-    new_meta_data->is_free=true;
-    new_meta_data->block_size=current->block_size-(size+ALIGNED_META_DATA);
-//    new_meta_data->current_size=new_meta_data->block_size;
-    current->block_size=size;
-
-    new_meta_data->next_ptr=current->next_ptr;          //updates pointers of list
-    if(!current->next_ptr)
-        current->next_ptr->prev_ptr=new_meta_data;
-    current->next_ptr=new_meta_data;
-    new_meta_data->prev_ptr=current;
-}
 
 void check_and_combine(meta_data* to_release){
     if(to_release->prev_ptr!=NULL && to_release->prev_ptr->is_free){        //combine to_release and prev
@@ -59,6 +43,26 @@ void check_and_combine(meta_data* to_release){
 
         to_release->next_ptr=to_release->next_ptr->next_ptr;
     }
+}
+
+void check_and_split(meta_data* current, size_t size){
+    if(current->block_size<(size+ALIGNED_META_DATA+LARGE_ENOUGH))
+        return;
+
+    meta_data* new_meta_data=(meta_data*)current->start_of_alloc;             //inserts new meta_data to list
+    (char*)new_meta_data += size;
+    new_meta_data->is_free=true;
+    new_meta_data->block_size=current->block_size-(size+ALIGNED_META_DATA);
+//    new_meta_data->current_size=new_meta_data->block_size;
+    current->block_size=size;
+
+    new_meta_data->next_ptr=current->next_ptr;          //updates pointers of list
+    if(current->next_ptr!=NULL)
+        current->next_ptr->prev_ptr=new_meta_data;
+    current->next_ptr=new_meta_data;
+    new_meta_data->prev_ptr=current;
+
+    check_and_combine(new_meta_data);
 }
 
 bool wilderness_expand(size_t size_differnce){
@@ -84,6 +88,7 @@ meta_data* find_first_fitting_place(size_t size){
             continue;
         }
         if(current->block_size>=size) {
+            current->is_free=false;
             check_and_split(current,size);
             return current;
         }else if(current==last_data){                   //block_size < size && the last_data is free (problem 3)
@@ -214,7 +219,7 @@ void* realloc(void* oldp, size_t size){
     if(tmp_ptr==NULL)
         return NULL;
 
-    old_meta_data->is_free=true;                        //here we free the old space
+    free(old_meta_data->start_of_alloc);                     //here we free the old space
     return new_start_of_alloc;
 }
 

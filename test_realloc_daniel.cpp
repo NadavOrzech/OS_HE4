@@ -162,7 +162,6 @@ void remalloc_3_test() {
     //Should split the block
     large_malloc = (int*)realloc(large_malloc, 60*sizeof(int));
     assert(large_malloc);
-    assert(11==2);
     for (int i = 0; i < 40; i++) {
         assert(large_malloc[i] == i);
     }

@@ -54,11 +54,9 @@ void malloc2_test_01() {
     assert(_num_meta_data_bytes() == _size_meta_data() * 3);
 
     // realloc
-    printf("BEFORE REALLOC\n");
 
     int *ninety = (int *) realloc(ten, sizeof(int) * 90);
 
-    printf("AFTER REALLOC\n");
 
     for (int i = 0; i < 90; i++) {
         ninety[i] = 90;
@@ -166,7 +164,6 @@ void malloc3_test_01() {
     // free & malloc
     free(ninety);
 
-
 //    //--------------------------------------------------------------------------------------
 //    meta_data* tmp1=first_data;
 //    int j=0;
@@ -181,6 +178,7 @@ void malloc3_test_01() {
 //    printf("   num alocated bytes: %d \n",_num_allocated_bytes()/ sizeof(int));
 
     int *eleven = (int *) malloc(sizeof(int) * 11);
+
     assert(eleven >= ninety);
     assert(eleven <= (void *) ((long) ninety + 79 * sizeof(int)));
 
