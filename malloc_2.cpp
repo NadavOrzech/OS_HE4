@@ -7,7 +7,7 @@
 struct meta_data{
     bool is_free;
     size_t block_size;
-    size_t current_size;
+//    size_t current_size;
     void* start_of_alloc;
     meta_data* next_ptr;
     meta_data* prev_ptr;
@@ -54,7 +54,7 @@ meta_data* create_new_meta_data(size_t size){
         return NULL;
 
     data_to_add->is_free=true;                         //initializing the mete_data fields
-    data_to_add->current_size=size;
+//    data_to_add->current_size=size;
     data_to_add->block_size=size;
     data_to_add->start_of_alloc=sbrk(size);
 
@@ -86,7 +86,7 @@ void* malloc(size_t size){
 
     meta_data* ptr=find_first_fitting_place(size);
     if (ptr!=NULL){                                     //ptr = existing meta data that is currently free
-        ptr->current_size=size;
+//        ptr->current_size=size;
         ptr->is_free=false;
         return ptr->start_of_alloc;
     }
@@ -124,7 +124,7 @@ void* realloc(void* oldp, size_t size){
         return malloc(size);
 
     if(old_meta_data->block_size>=size){                 //there is enough space in old block for realloction
-        old_meta_data->current_size=size;
+//        old_meta_data->current_size=size;
         return old_meta_data->start_of_alloc;
     }
 

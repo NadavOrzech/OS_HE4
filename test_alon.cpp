@@ -7,7 +7,7 @@
 /** Run the test 4 times, and each time change the _TEST_NUMBER definition.
  * _TEST_NUMBER should be: 1 or 2 or 3 or 4.
  */
-#define _TEST_NUMBER 1
+#define _TEST_NUMBER 4
 
 
 #if (1 == _TEST_NUMBER)

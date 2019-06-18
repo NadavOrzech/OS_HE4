@@ -3,7 +3,7 @@
 #include <cstdio>
 #include <cassert>
 
-#define MALLOC_VERSION 2
+#define MALLOC_VERSION 3
 
 #if (MALLOC_VERSION == 2)
     #include "malloc_2.cpp"
@@ -158,10 +158,11 @@ void remalloc_3_test() {
         assert(large_malloc[i] == i);
     }
     TEST_MALLOC();
-    
+
     //Should split the block
     large_malloc = (int*)realloc(large_malloc, 60*sizeof(int));
     assert(large_malloc);
+    assert(11==2);
     for (int i = 0; i < 40; i++) {
         assert(large_malloc[i] == i);
     }
@@ -171,6 +172,7 @@ void remalloc_3_test() {
     valid_allocated_bytes-=_size_meta_data();
     valid_meta_data_bytes+=_size_meta_data();
     TEST_MALLOC();
+
 }
 
 int main() {
