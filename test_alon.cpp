@@ -7,7 +7,7 @@
 /** Run the test 4 times, and each time change the _TEST_NUMBER definition.
  * _TEST_NUMBER should be: 1 or 2 or 3 or 4.
  */
-#define _TEST_NUMBER 2
+#define _TEST_NUMBER 1
 
 
 #if (1 == _TEST_NUMBER)
@@ -158,9 +158,28 @@ void malloc3_test_01() {
     assert(_num_allocated_bytes() == sizeof(int) * 168);
     assert(_num_meta_data_bytes() == _size_meta_data() * 5);
 
+//    printf("1: META: %d, ALIGN: %d\n", sizeof(meta_data)/ sizeof(int), ALIGNED_META_DATA/ sizeof(int));
+//    printf("   num alocated bytes: %d \n",_num_allocated_bytes()/ sizeof(int));
+
+
     // order so far: ten(freed), five, three, ninety, sixty
     // free & malloc
     free(ninety);
+
+
+//    //--------------------------------------------------------------------------------------
+//    meta_data* tmp1=first_data;
+//    int j=0;
+//    while(tmp1) {
+//        printf("Block Size[%d]: %d\n", j, tmp1->block_size);
+//        tmp1=tmp1->next_ptr;
+//        j++;
+//    }
+////--------------------------------------------------------------------------------------
+
+//    printf("2: META: %d, ALIGN: %d\n", sizeof(meta_data)/ sizeof(int), ALIGNED_META_DATA/ sizeof(int));
+//    printf("   num alocated bytes: %d \n",_num_allocated_bytes()/ sizeof(int));
+
     int *eleven = (int *) malloc(sizeof(int) * 11);
     assert(eleven >= ninety);
     assert(eleven <= (void *) ((long) ninety + 79 * sizeof(int)));
@@ -171,11 +190,23 @@ void malloc3_test_01() {
     for (int i = 11 + _size_meta_data() * sizeof(int); i < 90; i++) {
         assert(ninety[i] == 90);
     }
-
+//--------------------------------------------------------------------------------------
+//    meta_data* tmp2=first_data;
+//    int i=0;
+//    while(tmp2) {
+//        printf("Block Size[%d]: %d\n", i, tmp2->block_size);
+//        tmp2=tmp2->next_ptr;
+//        i++;
+//    }
+//--------------------------------------------------------------------------------------
     // order so far: freed(10), five, three, eleven, freed(79-data_size), sixty
     assert(_num_free_blocks() == 2);
     assert(_num_free_bytes() == sizeof(int) * (10 + 79) - _size_meta_data());
     assert(_num_allocated_blocks() == 6);
+
+//    printf("3: META: %d, ALIGN: %d\n", sizeof(meta_data)/ sizeof(int), ALIGNED_META_DATA/ sizeof(int));
+//    printf("   num alocated bytes: %d \n",_num_allocated_bytes()/ sizeof(int));
+
     assert(_num_allocated_bytes() == sizeof(int) * 168 - _size_meta_data());
     assert(_num_meta_data_bytes() == _size_meta_data() * 6);
 
@@ -248,8 +279,8 @@ void malloc3_test_02() {
 void malloc3_test_03() {
 
     assert(_num_meta_data_bytes() % 4 == 0); // problem 3 check
-
     void *huge = (void *) malloc(1000);
+
     assert(huge);
     assert(_num_free_blocks() == 0);
     assert(_num_free_bytes() == 0);
@@ -258,6 +289,7 @@ void malloc3_test_03() {
     assert(_num_meta_data_bytes() == _size_meta_data() * 1);
     void *tiny = (void *) malloc(31); // (problem 4)
     free(huge);
+
     assert(tiny);
     assert(_num_free_blocks() == 1);
     assert(_num_free_bytes() == 1000);
@@ -266,7 +298,9 @@ void malloc3_test_03() {
     assert(_num_meta_data_bytes() == _size_meta_data() * 2);
 
     // fits just right (problem 1 test for exactly 128 free bytes is okay for split)
+//    assert(1==2);
     void *mid = (void *) malloc(1000 - 128 - _size_meta_data());
+
     assert(mid >= huge && mid <= (void *) ((long) huge + 872));
     assert(_num_free_blocks() == 1);
     assert(_num_free_bytes() == 128);

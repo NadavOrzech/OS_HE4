@@ -26,17 +26,18 @@ void check_and_split(meta_data* current, size_t size){
     if(current->block_size<(size+ALIGNED_META_DATA+LARGE_ENOUGH))
         return;
 
-    meta_data* new_meta_data=(meta_data*)(current->start_of_alloc);             //inserts new meta_data to list
-    new_meta_data+=size;
+    meta_data* new_meta_data=(meta_data*)current->start_of_alloc;             //inserts new meta_data to list
+    (char*)new_meta_data += size;
     new_meta_data->is_free=true;
     new_meta_data->block_size=current->block_size-(size+ALIGNED_META_DATA);
     new_meta_data->current_size=new_meta_data->block_size;
+    current->block_size=size;
 
-    new_meta_data->next_ptr=current->next_ptr;          //updates ptrs of list
-    current->next_ptr->prev_ptr=new_meta_data;
+    new_meta_data->next_ptr=current->next_ptr;          //updates pointers of list
+    if(!current->next_ptr)
+        current->next_ptr->prev_ptr=new_meta_data;
     current->next_ptr=new_meta_data;
     new_meta_data->prev_ptr=current;
-
 }
 
 void check_and_combine(meta_data* to_release){
@@ -60,6 +61,18 @@ void check_and_combine(meta_data* to_release){
     }
 }
 
+bool wilderness_expand(size_t size_differnce){
+    void* alloc_check=sbrk(size_differnce);
+
+    if(alloc_check==(void*)(-1)){       //if allocation failed
+        return false;
+    }
+
+    return true;
+}
+
+
+
 /*
  *   Returns NULL if there is no empty place in the list
  */
@@ -72,6 +85,12 @@ meta_data* find_first_fitting_place(size_t size){
         }
         if(current->block_size>=size) {
             check_and_split(current,size);
+            return current;
+        }else if(current==last_data){                   //block_size < size && the last_data is free (problem 3)
+            if(!(wilderness_expand(size-current->block_size)))
+                return NULL;
+
+            current->block_size=size;
             return current;
         }
         current=current->next_ptr;                      //else - block is free but not big enough
@@ -141,7 +160,6 @@ void* malloc(size_t size){
         return ptr->start_of_alloc;
     }
     ptr=create_new_meta_data(size);                     //ptr = new meta_data, inserted last to the list
-
     if(ptr==NULL)                                       //ptr = NULL, if sbrk doesnt succeed
         return NULL;
 
