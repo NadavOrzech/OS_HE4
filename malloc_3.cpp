@@ -6,6 +6,9 @@
 #define LARGE_ENOUGH 128
 #define SIZE_NOT_ALIGNED(size) (size%4!=0)
 #define ALIGN_SIZE(size) (4-(size%4))
+#define CANT_HELP_FRIEND -1
+#define HELPED_FRIEND -2
+#define HELPED_FRIEND_WITH_EXTRA -3
 
 
 struct meta_data{
@@ -28,16 +31,20 @@ void check_and_combine(meta_data* to_release){
     if(to_release->prev_ptr!=NULL && to_release->prev_ptr->is_free){        //combine to_release and prev
         to_release->prev_ptr->next_ptr=to_release->next_ptr;
 
-        if(to_release->next_ptr)            //checks that to_release is not the last node in list
+        if(to_release->next_ptr!=NULL)            //checks that to_release is not the last node in list
             to_release->next_ptr->prev_ptr=to_release->prev_ptr;
+        else
+            last_data=to_release->prev_ptr;
 
         to_release->prev_ptr->block_size+=(ALIGNED_META_DATA+to_release->block_size);
         to_release=to_release->prev_ptr;
     }
 
     if(to_release->next_ptr!=NULL && to_release->next_ptr->is_free){        //combine to_release and next
-        if(to_release->next_ptr->next_ptr)
+        if(to_release->next_ptr->next_ptr!=NULL)
             to_release->next_ptr->next_ptr->prev_ptr=to_release;
+        else
+            last_data=to_release;
 
         to_release->block_size+=(ALIGNED_META_DATA+to_release->next_ptr->block_size);
 
@@ -64,6 +71,36 @@ void check_and_split(meta_data* current, size_t size){
 
     check_and_combine(new_meta_data);
 }
+
+meta_data* come_to_help_a_friend(meta_data* current, meta_data* next, int size){
+
+    if(current->block_size+next->block_size+ALIGNED_META_DATA < size)
+        return NULL;                        //not enough space in current+next for requested realloc
+
+    if((size-(current->block_size + next->block_size)) < LARGE_ENOUGH){     //merge current and next
+        current->next_ptr=next->next_ptr;                   //deleting the next meta_data node
+        if(next->next_ptr!=NULL)
+            next->next_ptr->prev_ptr=current;
+        else{
+            last_data=current;
+        }
+        current->block_size+=next->block_size+ALIGNED_META_DATA;
+        return current;
+    }
+
+    //next now needs to give current the requested bytes, and become smaller
+    meta_data* tmp_ptr=next;
+    (char*)tmp_ptr+=(size-current->block_size);
+    void* retval=std::memcpy(tmp_ptr,next, ALIGNED_META_DATA);
+    if(retval==NULL)
+        return NULL;
+
+    next->block_size-=(size-current->block_size);
+    current->block_size=size;
+
+    return current;
+}
+
 
 bool wilderness_expand(size_t size_differnce){
     void* alloc_check=sbrk(size_differnce);
@@ -118,6 +155,13 @@ meta_data* find_meta_data_by_user_ptr(void* user_ptr){
 }
 
 meta_data* create_new_meta_data(size_t size){
+   if(first_data==NULL){
+       void* program_break=sbrk(0);
+       if(SIZE_NOT_ALIGNED((int)program_break))
+           sbrk(ALIGN_SIZE((int)program_break));
+   }
+
+
     meta_data* data_to_add=(meta_data*)sbrk(ALIGNED_META_DATA);
     if(data_to_add==(void*)(-1))
         return NULL;
@@ -211,6 +255,13 @@ void* realloc(void* oldp, size_t size){
         return old_meta_data->start_of_alloc;
     }
 
+    if(old_meta_data->next_ptr->is_free==true ){                 //if we need to expand and next block is free
+        meta_data* retval=come_to_help_a_friend(old_meta_data,old_meta_data->next_ptr,size);
+        if(retval!=NULL)
+            return old_meta_data->start_of_alloc;
+    }
+
+    //if memcpy fails or there isn't enough space in oldp, we allocate a new block
     void* new_start_of_alloc=malloc(size);
     if(new_start_of_alloc==NULL)                             //if allocation failed we dont free oldp
         return NULL;
