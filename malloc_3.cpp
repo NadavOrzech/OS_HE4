@@ -4,7 +4,7 @@
 #include <cstdlib>
 
 
-#include <iostream>
+//#include <iostream>
 
 
 #define MAX_SIZE 100000000
@@ -89,7 +89,8 @@ meta_data* come_to_help_a_friend(meta_data* current, meta_data* next, int size){
     if(current->block_size+next->block_size+ALIGNED_META_DATA < size)
         return NULL;                        //not enough space in current+next for requested realloc
 
-    if((size-(current->block_size + next->block_size)) < LARGE_ENOUGH){     //merge current and next
+    if(((int)size-((int)(current->block_size) + (int)(next->block_size))) < LARGE_ENOUGH &&
+            ((int)size-((int)(current->block_size) + (int)(next->block_size))) > 0){     //merge current and next
         current->next_ptr=next->next_ptr;                   //deleting the next meta_data node
         if(next->next_ptr!=NULL)
             next->next_ptr->prev_ptr=current;
@@ -100,6 +101,9 @@ meta_data* come_to_help_a_friend(meta_data* current, meta_data* next, int size){
         return current;
     }
 
+    printf("Requested size              %d\n",(int)(size) );
+    printf("Current block size          %d\n",(int)(current->block_size) );
+    printf("Next block size             %d\n",(next->block_size) );
     //next now needs to give current the requested bytes, and become smaller
     meta_data* tmp_ptr=next;
     (char*)tmp_ptr+=(size-current->block_size);
@@ -107,7 +111,16 @@ meta_data* come_to_help_a_friend(meta_data* current, meta_data* next, int size){
     if(retval==NULL)
         return NULL;
 
+
+
+    printf("----------------------------------------------\n");
+    next->start_of_alloc=(char*)next+ALIGNED_META_DATA;
+
     next->block_size-=(size-current->block_size);
+    current->next_ptr=next;
+    printf("Requested size              %d\n",(int)(size) );
+    printf("Current block size          %d\n",(int)(current->block_size) );
+    printf("Next block size             %d\n",(int)(next->block_size) );
     current->block_size=size;
 
     return current;
@@ -250,6 +263,9 @@ void* realloc(void* oldp, size_t size){
     if(size == 0 || size > MAX_SIZE)
         return NULL;
 
+    if(SIZE_NOT_ALIGNED(size))
+        size+=ALIGN_SIZE(size);
+
     meta_data* old_meta_data=find_meta_data_by_user_ptr(oldp);
     if(old_meta_data==NULL)                             //oldp is NULL or there is no meta_data that holds oldp
         return malloc(size);
@@ -270,9 +286,16 @@ void* realloc(void* oldp, size_t size){
     }
 
     if(old_meta_data->next_ptr->is_free==true ){                 //if we need to expand and next block is free
-        meta_data* retval=come_to_help_a_friend(old_meta_data,old_meta_data->next_ptr,size);
-        if(retval!=NULL)
+        printf("before calling come help friend, next block size        %d\n",old_meta_data->next_ptr->block_size);
+        meta_data* retval=come_to_help_a_friend(old_meta_data,old_meta_data->next_ptr,(int)size);
+        printf("SHOULD NOT BE HERE!!!!!!!!!!!!!!!!\n");
+
+        if(retval!=NULL) {
+            printf("!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
             return old_meta_data->start_of_alloc;
+            printf("####################################");
+
+        }
     }
 
     //if memcpy fails or there isn't enough space in oldp, we allocate a new block
