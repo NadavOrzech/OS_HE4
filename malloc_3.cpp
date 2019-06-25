@@ -261,6 +261,8 @@ void* realloc(void* oldp, size_t size){
     }
 
     if(old_meta_data==last_data){
+        if(SIZE_NOT_ALIGNED(size))
+            size+=ALIGN_SIZE(size);
         if(!(wilderness_expand(size-old_meta_data->block_size)))  //if oldp==last_data we expand the block size of the last block
             return NULL;
         old_meta_data->block_size=size;
