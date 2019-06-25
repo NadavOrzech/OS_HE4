@@ -1,8 +1,8 @@
 /*
-g++ malloc_2.cpp -fPIC -shared -o libmal.so
-g++ tamuz_tests_hw4.cpp -L ./ -lmal
+g++ malloc_3.cpp -fPIC -shared -o libmal.so
+g++ tamuz_tests_hw4_malloc3.cpp -L ./ -lmal
 
-export LD_LIBRARY_PATH="/root/hw4/"
+export LD_LIBRARY_PATH="/root/"
  */
 
 #include <unistd.h>
@@ -30,17 +30,6 @@ typedef struct {
 			meta_data_bytes;
 } HeapState;
 
-size_t _num_free_blocks();
-size_t _num_free_bytes();
-size_t _num_allocated_blocks();
-size_t _num_allocated_bytes();
-size_t _num_meta_data_bytes();
-size_t _size_meta_data();
-
-/*******************************************************************************
- *  AUXILIARY FUNCTIONS
- ******************************************************************************/
-
 void print_meta(){
 	meta_data* ptr=first_data;
 	while(ptr){
@@ -56,6 +45,16 @@ void print_meta(){
 }
 
 
+size_t _num_free_blocks();
+size_t _num_free_bytes();
+size_t _num_allocated_blocks();
+size_t _num_allocated_bytes();
+size_t _num_meta_data_bytes();
+size_t _size_meta_data();
+
+/*******************************************************************************
+ *  AUXILIARY FUNCTIONS
+ ******************************************************************************/
 
 void get_initial_state(HeapState &initial) {
 	initial.free_blocks = _num_free_blocks();
@@ -320,7 +319,6 @@ void test_malloc_split_and_merge() {
 	add_expected_block(expected, 3);
 	assert_state(initial, expected);
 
-
 	copy(DATA, p1, 133 + 2*METASIZE);
 	p2[0]=0; p2[1]=1; p2[2]=2;
 	p3[0]=0; p3[1]=1; p3[2]=2;
@@ -330,69 +328,26 @@ void test_malloc_split_and_merge() {
 	free(p1);
 	free_expected_block(expected, 133+2*METASIZE);
 	assert_state(initial, expected);
-
-	printf("------------------Before malloc p1b-------------------\n");
-	printf("Initial free blocks          %d\n", initial.free_blocks);
-
-	printf("Num allocated blocks         %d\n", _num_allocated_blocks());
-	printf("Initial allocated blocks     %d\n", initial.allocated_blocks);
-	printf("Num expected blocks          %d\n", expected.allocated_blocks);
-
-	printf("Num expected free blocks     %d\n", expected.free_blocks);
-	printf("Num allocated bytes          %d\n", expected.allocated_bytes);
-	printf("Num free bytes               %d\n", expected.free_bytes);
-	printf("------------------Before malloc p1b-------------------\n");
-
-
 	p1b = malloc_byte(2);
-
 	expected.allocated_blocks++;
 	expected.allocated_bytes -= METASIZE;
 	expected.free_bytes -= (4 + METASIZE);
 	expected.meta_data_bytes += METASIZE;
 	assert_state(initial, expected);
-
-	printf("------------------Before malloc p1-------------------\n");
-	printf("Initial free blocks          %d\n", initial.free_blocks);
-
-	printf("Num allocated blocks         %d\n", _num_allocated_blocks());
-	printf("Initial allocated blocks     %d\n", initial.allocated_blocks);
-	printf("Num expected blocks          %d\n", expected.allocated_blocks);
-
-	printf("Num expected free blocks     %d\n", expected.free_blocks);
-	printf("Num allocated bytes          %d\n", expected.allocated_bytes);
-	printf("Num free bytes               %d\n", expected.free_bytes);
-	printf("------------------Before malloc p1-------------------\n");
-
-	print_meta();
+//	printf("------------------------------------------------\n");
+//	print_meta();
+//	printf("------------------------------------------------\n");
 	p1 = malloc_byte(4);
-	printf("-----------------------------------------------------\n");
-
-	print_meta();
-
+//	printf("------------------------------------------------\n");
+//	print_meta();
+//	printf("------------------------------------------------\n");
 	expected.allocated_blocks++;
 	expected.allocated_bytes -= METASIZE;
 	expected.free_bytes -= (4 + METASIZE);
 	expected.meta_data_bytes += METASIZE;
-
-	printf("------------------After malloc p1b-------------------\n");
-	printf("Initial free blocks          %d\n", initial.free_blocks);
-
-	printf("Num allocated blocks         %d\n", _num_allocated_blocks());
-	printf("Initial allocated blocks     %d\n", initial.allocated_blocks);
-	printf("Num expected blocks          %d\n", expected.allocated_blocks);
-
-	printf("Num expected free blocks     %d\n", expected.free_blocks);
-	printf("Num allocated bytes          %d\n", expected.allocated_bytes);
-	printf("Num free bytes               %d\n", expected.free_bytes);
-
-
-
 	assert_state(initial, expected);
 	p1b[0]=201;p1b[1]=201;
 	p1[0]=200;p1[1]=200;p1[2]=200;p1[3]=200;
-
-
 
 	assert(heap[0+METASIZE]==201);
 	assert(heap[1+METASIZE]==201);
@@ -407,9 +362,6 @@ void test_malloc_split_and_merge() {
 	assert(p3[1]==1);
 	assert(p3[2]==2);
 
-
-
-
 	/* release p3 then p2. assert that p2 is merged with both adjucent blocks. */
 	free(p3);
 	free_expected_block(expected, 3);
@@ -420,7 +372,6 @@ void test_malloc_split_and_merge() {
 	merge_expected_block(expected);
 	assert_state(initial, expected);
 
-
 	free(p1b);
 	free(p1);
 	free_expected_block(expected, 4);
@@ -428,27 +379,40 @@ void test_malloc_split_and_merge() {
 	merge_expected_block(expected);
 	merge_expected_block(expected);
 	assert_state(initial, expected);
-
 }
 
 void test_realloc_just_contract() {
 	byte *heap = static_cast<byte*>(sbrk(0));
 	HeapState initial, expected = {0,0,0,0,0};
 	get_initial_state(initial);
+//	printf("--------------------------------------------\n");
+//	printf("before realloc Num_free_blocks:           %d\n", _num_free_blocks());
+//	printf("before realloc Num_alocated_blocks:       %d\n", _num_allocated_blocks());
+//	printf("before realloc initial.allocated_blocks:  %d\n", initial.allocated_blocks);
+//	printf("before realloc expected.allocated_blocks: %d\n", expected.allocated_blocks);
+//	printf("before realloc initial.allocated_bytess:  %d\n", _num_allocated_bytes());
+//	printf("before realloc initial.free_bytes:        %d\n", _num_free_bytes());
+
 
 	byte *p1, *p2, *p;
 	p1 = realloc_byte(NULL, 4);
 	add_expected_block(expected, 4);
 
-	printf("Num allocated blocks         %d\n", expected.allocated_blocks);
-	printf("Num free blocks              %d\n", expected.free_blocks);
-	printf("Num allocated bytes          %d\n", expected.allocated_bytes);
-	printf("Num free bytes               %d\n", expected.free_bytes);
-
+//	printf("Num_alocated_blocks:       %d\n", _num_allocated_blocks());
+//    printf("Num_free_blocks:           %d\n", _num_free_blocks());
+//	printf("initial.allocated_blocks:  %d\n", initial.allocated_blocks);
+//    printf("expected.allocated_blocks: %d\n", expected.allocated_blocks);
 
 	assert_state(initial, expected);
+
 	p2 = realloc_byte(NULL, 7);
 	add_expected_block(expected, 7);
+
+//	printf("TEST THIIS IS OKAY\n");
+//	printf("Num_alocated_blocks:       %d\n", _num_allocated_blocks());
+//	printf("initial.allocated_blocks:  %d\n", initial.allocated_blocks);
+//	printf("expected.allocated_blocks: %d\n", expected.allocated_blocks);
+
 	assert_state(initial, expected);
 
 	free(p1);
@@ -472,6 +436,11 @@ void test_realloc_split_then_merge() {
 	byte *p1, *p1b, *p2, *p3;
 	p1 = realloc_byte(NULL, 200);
 	add_expected_block(expected, 200);
+
+//	printf("Num_alocated_blocks:       %d\n", _num_allocated_blocks());
+//	printf("initial.allocated_blocks:  %d\n", initial.allocated_blocks);
+//	printf("expected.allocated_blocks: %d\n", expected.allocated_blocks);
+
 	assert_state(initial, expected);
 	p3 = realloc_byte(NULL, 200);
 	add_expected_block(expected, 200);
@@ -492,6 +461,8 @@ void test_realloc_split_then_merge() {
 	expected.free_bytes -= (4 + _size_meta_data());
 	assert_state(initial, expected);
 	assert(p2 == p1b+4+_size_meta_data());
+
+
 }
 
 void test_realloc_merge_then_split() {
@@ -499,21 +470,40 @@ void test_realloc_merge_then_split() {
 	HeapState initial, expected = {0,0,0,0,0};
 	get_initial_state(initial);
 
+//	printf("Num_alocated_blocks:       %d\n", _num_allocated_blocks());
+//	printf("initial.allocated_blocks:  %d\n", initial.allocated_blocks);
+//	printf("expected.allocated_blocks: %d\n", expected.allocated_blocks);
 	byte *p1, *p2, *p;
 	p1 = realloc_byte(NULL, 4);
 	p2 = realloc_byte(NULL, 200);
 	add_expected_block(expected, 4);
 	add_expected_block(expected, 200);
+
 	assert_state(initial, expected);
+
 
 	free(p2);
 	free_expected_block(expected, 200);
 	assert_state(initial, expected);
 
 	p = realloc_byte(p1, 7);
+//	printf("CHECK\n");
+
 	assert(p==p1);
+//	printf("CHECK\n");
+
 	expected.free_bytes -= 4;
-	assert_state(initial, expected);
+
+//	printf("CHECK\n");
+
+//	printf("Num_alocated_blocks:       %d\n", _num_allocated_blocks());
+//	printf("initial.allocated_blocks:  %d\n", initial.allocated_blocks);
+//	printf("expected.allocated_blocks: %d\n", expected.allocated_blocks);
+//
+//	assert_state(initial, expected);
+
+
+
 }
 
 void test_realloc_on_wilderness() {
@@ -522,12 +512,32 @@ void test_realloc_on_wilderness() {
 	get_initial_state(initial);
 
 	byte *p1, *p2;
+
+	printf("-------------------------------------------\n");
+	print_meta();
+	printf("-------------------------------------------\n");
+
 	p1 = realloc_byte(NULL, 4);
 	add_expected_block(expected, 4);
+
+//	printf("Num_alocated_blocks:       %d\n", _num_allocated_blocks());
+//	printf("initial.allocated_blocks:  %d\n", initial.allocated_blocks);
+//	printf("expected.allocated_blocks: %d\n", expected.allocated_blocks);
+
 	assert_state(initial, expected);
+
+	printf("-------------------------------------------\n");
+	print_meta();
+	printf("-------------------------------------------\n");
+
 	p2 = realloc_byte(p1, 5);
 	expected.allocated_bytes += 4;
+	printf("-------------------------------------------\n");
+	print_meta();
+	printf("-------------------------------------------\n");
 	assert_state(initial, expected);
+
+
 	assert(p1==p2);
 
 	free(p2);
@@ -547,6 +557,11 @@ void test_realloc_copy_to_wilderness() {
 	add_expected_block(expected, 4);
 	add_expected_block(expected, 4);
 	add_expected_block(expected, 4);
+
+//	printf("Num_alocated_blocks:       %d\n", _num_allocated_blocks());
+//	printf("initial.allocated_blocks:  %d\n", initial.allocated_blocks);
+//	printf("expected.allocated_blocks: %d\n", expected.allocated_blocks);
+
 	assert_state(initial, expected);
 	free(p3);
 	free_expected_block(expected, 4);
@@ -598,6 +613,11 @@ void test_failures() {
 
 	p = malloc_byte(1);
 	add_expected_block(expected, 1);
+
+//	printf("Num_alocated_blocks:       %d\n", _num_allocated_blocks());
+//	printf("initial.allocated_blocks:  %d\n", initial.allocated_blocks);
+//	printf("expected.allocated_blocks: %d\n", expected.allocated_blocks);
+
 	assert_state(initial, expected);
 	p[0] = 1;
 	assert(*(heap + _size_meta_data()) == 1);
@@ -654,26 +674,26 @@ static void callTestFunction(void (*func)()) {
 int main()
 {
 	align();
-//	std::cout << "test_basic_malloc_and_free" << std::endl;
-//	callTestFunction(test_basic_malloc_and_free);
-//	std::cout << "test_malloc_wilderness" << std::endl;
-//	callTestFunction(test_malloc_wilderness);
-//	std::cout << "test_calloc" << std::endl;
-//	callTestFunction(test_calloc);
+	std::cout << "test_basic_malloc_and_free" << std::endl;
+	callTestFunction(test_basic_malloc_and_free);
+	std::cout << "test_malloc_wilderness" << std::endl;
+	callTestFunction(test_malloc_wilderness);
+	std::cout << "test_calloc" << std::endl;
+	callTestFunction(test_calloc);
 	std::cout << "test_malloc_split_and_merge" << std::endl;
 	callTestFunction(test_malloc_split_and_merge);
-//	std::cout << "test_realloc_just_contract" << std::endl;
-//	callTestFunction(test_realloc_just_contract);
-//	std::cout << "test_realloc_split_then_merge" << std::endl;
-//	callTestFunction(test_realloc_split_then_merge);
-//	std::cout << "test_realloc_merge_then_split" << std::endl;
-//	callTestFunction(test_realloc_merge_then_split);
-//	std::cout << "test_realloc_on_wilderness" << std::endl;
-//	callTestFunction(test_realloc_on_wilderness);
-//	std::cout << "test_realloc_copy_to_wilderness" << std::endl;
-//	callTestFunction(test_realloc_copy_to_wilderness);
-//	std::cout << "test_failures" << std::endl;
-//	callTestFunction(test_failures);
-//	std::cout << "Done." << std::endl;
+	std::cout << "test_realloc_just_contract" << std::endl;
+	callTestFunction(test_realloc_just_contract);
+	std::cout << "test_realloc_split_then_merge" << std::endl;
+	callTestFunction(test_realloc_split_then_merge);
+	std::cout << "test_realloc_merge_then_split" << std::endl;
+	callTestFunction(test_realloc_merge_then_split);
+	std::cout << "test_realloc_on_wilderness" << std::endl;
+	callTestFunction(test_realloc_on_wilderness);
+	std::cout << "test_realloc_copy_to_wilderness" << std::endl;
+	callTestFunction(test_realloc_copy_to_wilderness);
+	std::cout << "test_failures" << std::endl;
+	callTestFunction(test_failures);
+	std::cout << "Done." << std::endl;
 	return 0;
 }

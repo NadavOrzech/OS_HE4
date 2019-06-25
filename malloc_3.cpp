@@ -1,6 +1,11 @@
 
 #include <cstring>
 #include <unistd.h>
+#include <cstdlib>
+
+
+#include <iostream>
+
 
 #define MAX_SIZE 100000000
 #define LARGE_ENOUGH 128
@@ -58,10 +63,17 @@ void check_and_split(meta_data* current, size_t size){
 
     meta_data* new_meta_data=(meta_data*)current->start_of_alloc;             //inserts new meta_data to list
     (char*)new_meta_data += size;
+//    printf("current: %d\n", current);
+//    printf("startAl: %d\n", current->start_of_alloc);
+//    printf("new:     %d\n", new_meta_data);
+
     new_meta_data->is_free=true;
+
     new_meta_data->block_size=current->block_size-(size+ALIGNED_META_DATA);
-//    new_meta_data->current_size=new_meta_data->block_size;
+
     current->block_size=size;
+    new_meta_data->start_of_alloc=(char*)new_meta_data+ALIGNED_META_DATA;
+//    printf("newALOC: %d\n", new_meta_data->start_of_alloc);
 
     new_meta_data->next_ptr=current->next_ptr;          //updates pointers of list
     if(current->next_ptr!=NULL)
@@ -281,8 +293,12 @@ void* realloc(void* oldp, size_t size){
 size_t _num_free_blocks(){
     meta_data* current=first_data;
     size_t num_free_blocks=0;
-
     while(current){
+  /*      if(current->is_free)
+            printf("true\n");
+        else
+            printf("false\n");
+*/
         if(current->is_free)
             num_free_blocks++;
         current=current->next_ptr;

@@ -1,6 +1,7 @@
 
 #include <cstring>
 #include <unistd.h>
+#include <cstdlib>
 
 #define MAX_SIZE 100000000
 
