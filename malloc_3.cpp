@@ -101,28 +101,25 @@ meta_data* come_to_help_a_friend(meta_data* current, meta_data* next, int size){
         return current;
     }
 
-    printf("Requested size              %d\n",(int)(size) );
-    printf("Current block size          %d\n",(int)(current->block_size) );
-    printf("Next block size             %d\n",(next->block_size) );
     //next now needs to give current the requested bytes, and become smaller
-    meta_data* tmp_ptr=next;
-    (char*)tmp_ptr+=(size-current->block_size);
-    void* retval=std::memcpy(tmp_ptr,next, ALIGNED_META_DATA);
-    if(retval==NULL)
-        return NULL;
 
 
+    int tmp_block_size=next->block_size;
+    meta_data* tmp_next_ptr=next->next_ptr;
+    meta_data* tmp_prev_ptr=next->prev_ptr;
 
-    printf("----------------------------------------------\n");
+    (char*)next+=(size-current->block_size);
     next->start_of_alloc=(char*)next+ALIGNED_META_DATA;
+    next->block_size=tmp_block_size-(size-current->block_size);
 
-    next->block_size-=(size-current->block_size);
     current->next_ptr=next;
-    printf("Requested size              %d\n",(int)(size) );
-    printf("Current block size          %d\n",(int)(current->block_size) );
-    printf("Next block size             %d\n",(int)(next->block_size) );
-    current->block_size=size;
+    next->next_ptr=tmp_next_ptr;
+    next->prev_ptr=tmp_prev_ptr;
+    if(next->next_ptr)
+        next->next_ptr->prev_ptr=next;
 
+    current->block_size=size;
+    
     return current;
 }
 
@@ -286,15 +283,10 @@ void* realloc(void* oldp, size_t size){
     }
 
     if(old_meta_data->next_ptr->is_free==true ){                 //if we need to expand and next block is free
-        printf("before calling come help friend, next block size        %d\n",old_meta_data->next_ptr->block_size);
         meta_data* retval=come_to_help_a_friend(old_meta_data,old_meta_data->next_ptr,(int)size);
-        printf("SHOULD NOT BE HERE!!!!!!!!!!!!!!!!\n");
 
         if(retval!=NULL) {
-            printf("!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
             return old_meta_data->start_of_alloc;
-            printf("####################################");
-
         }
     }
 
